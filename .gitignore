@@ -1,0 +1,9 @@
+################################
+# Processing patterns
+################################
+
+# Sketch prefs
+.properties
+
+# OSX
+.DS_Store
