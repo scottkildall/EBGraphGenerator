@@ -5,5 +5,8 @@
 # Sketch prefs
 .properties
 
+# images
+.png
+
 # OSX
 .DS_Store
