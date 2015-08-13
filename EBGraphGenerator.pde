@@ -15,13 +15,21 @@ String [] sentimentNames;
 int [] sentimentColors;   // we convert from string to color with unhex() 
 float [][] wordFrequencies;    // 1st index is sentiment, 2nd is the values themselves
 int NUM_TIME_SLICES = 6;
+boolean bDisplayOne = false;
 
+//-- last transaction
+int NUM_TRANSACTION_TIME_SLICES = 12;
+float [] stockPrices;   
+float [] wordFreqs;  
+int transactionSentimentIndex = 1;
+
+
+//-- general drawing
 float graphBoxX;
 float graphBoxY;
 float graphBoxWidth;
 float graphBoxHeight;
 
-boolean bDisplayOne = false;
 
 void setup() {
   size(1440,900, OPENGL );
@@ -34,6 +42,7 @@ void setup() {
   graphBoxHeight = height - (graphBoxY*2);
 
   initWordFrequencies();
+  initTransactions();
 }
 
 void draw() {
@@ -66,6 +75,7 @@ void keyPressed() {
   }
   else if( key == 'r' ) {
     initWordFrequencies();
+    initTransactions();
   }
   else if( key == 'd' ) {
     bDisplayOne = !bDisplayOne; 
@@ -74,7 +84,7 @@ void keyPressed() {
 
 //-- private --//
 
-void drawWordFrequencies() {
+void drawCorrelation() {
    background(255);
    strokeWeight(1);
    
@@ -83,16 +93,69 @@ void drawWordFrequencies() {
    line(graphBoxX, graphBoxY, graphBoxX, graphBoxY + graphBoxHeight );
    line(graphBoxX, graphBoxY + graphBoxHeight, graphBoxX + graphBoxWidth, graphBoxY + graphBoxHeight );
    
-   float drawX;
-   float lastDrawX = 0;
+   float drawStockX;
+   float lastDrawStockX = 0.0;
+   float drawStockY;
+   float lastDrawStockY = 0.0;
    
-   float drawY;
-   float lastDrawY = 0; 
+   float drawWFX;
+   float lastDrawWFX = 0.0;
+   float drawWFY;
+   float lastDrawWFY = 0.0;
+   
+   float stockMinY = stockPrices[0] - (stockPrices[0]/100);
+   float stockMaxY = stockPrices[0] + (stockPrices[0]/100);
+   float wordFreqMinY = wordFreqs[0] - (wordFreqs[0]/100);
+   float wordFreqMaxY = wordFreqs[0] + (wordFreqs[0]/100);
+   
+   for( int i = 0; i < NUM_TRANSACTION_TIME_SLICES; i++ ) {
+      float segmentLength = (graphBoxWidth - 2)/NUM_TRANSACTION_TIME_SLICES;
+      
+         // map X, according to segments
+         drawStockX = map(i, 0, NUM_TRANSACTION_TIME_SLICES-1, graphBoxX+1, graphBoxX + graphBoxWidth-1);
+         drawStockY = map(stockPrices[i], stockMinY, stockMaxY, graphBoxY + graphBoxHeight-1, graphBoxY+1);
+         
+         drawWFX = drawStockX;
+         drawWFY = map(wordFreqs[i], wordFreqMinY, wordFreqMaxY, graphBoxY + graphBoxHeight-1, graphBoxY+1);
+         
+         if( i != 0 ) {
+           // gray line for stock price
+           stroke(40);
+           strokeWeight(4);
+           noFill();
+           line( lastDrawStockX,  lastDrawStockY, drawStockX, drawStockY );
+           
+           stroke(sentimentColors[transactionSentimentIndex]);
+           line( lastDrawWFX,  lastDrawWFY, drawWFX, drawWFY );
+        
+         }
+         
+         lastDrawStockY = drawStockY;
+         lastDrawStockX = drawStockX;
+         lastDrawWFY = drawWFY;
+         lastDrawWFX = drawWFX;
+     }
+ }
+
+
+
+void drawWordFrequencies() {
+  background(255);
   
+   stroke(0);
+   strokeWeight(1);
+   noFill();
+   line(graphBoxX, graphBoxY, graphBoxX, graphBoxY + graphBoxHeight );
+   line(graphBoxX, graphBoxY + graphBoxHeight, graphBoxX + graphBoxWidth, graphBoxY + graphBoxHeight );
+   
    int numDisplay = NUM_SENTIMENTS;
    if( bDisplayOne )
       numDisplay = 1;
-      
+    
+    float drawX;
+   float lastDrawX = 0.0;
+   float drawY;
+   float lastDrawY = 0.0;
    for( int i = 0; i < numDisplay; i++ ) {
       float segmentLength = (graphBoxWidth - 2)/NUM_TIME_SLICES;
       
@@ -120,11 +183,7 @@ void drawWordFrequencies() {
          lastDrawX = drawX;
      }
    }
- }
-
-
-void drawCorrelation() {
-  background(0);
+   
 }
 
 
@@ -194,4 +253,18 @@ void initRandomFequencies() {
      }
    }
 }  
+
+void initTransactions() {
+ stockPrices = new float[NUM_TRANSACTION_TIME_SLICES]; 
+ wordFreqs = new float[NUM_TRANSACTION_TIME_SLICES];   
+ 
+ stockPrices[0] = 53.05;
+ wordFreqs[0] = .13402131;
+ 
+ for(int i = 1; i < NUM_TRANSACTION_TIME_SLICES; i++ ) {
+     // make a variant based on the previous
+      stockPrices[i] = stockPrices[i-1] + random(-(stockPrices[0])/(25*NUM_TRANSACTION_TIME_SLICES), (stockPrices[0])/(25*NUM_TRANSACTION_TIME_SLICES) );
+      wordFreqs[i] = wordFreqs[i-1] + random(-(wordFreqs[0])/(25*NUM_TRANSACTION_TIME_SLICES), (wordFreqs[0])/(25*NUM_TRANSACTION_TIME_SLICES) );
+  }
+}
 
